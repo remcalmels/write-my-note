@@ -21,6 +21,7 @@
           -file FILE            markdown file to copy content
           -text TEXT            text to search
           --debug               debug mode
+          --console             to log to the console, logs to ./output.log otherwise
 """
 
 import argparse
