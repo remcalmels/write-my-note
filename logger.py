@@ -5,7 +5,7 @@ import logging
 loggers = {}
 
 
-def getLogger(name, debug_mode=False):
+def getLogger(name, debug_mode=False, console_handler=False):
 
     """
     Pour éviter le problème de doublons sur les logs :
@@ -20,10 +20,15 @@ def getLogger(name, debug_mode=False):
         logger = logging.getLogger(name)
         level = logging.DEBUG if debug_mode else logging.INFO
         logger.setLevel(level)
-        console_handler = logging.StreamHandler()
+
+        if console_handler:
+            handler = logging.StreamHandler()
+        else:
+            handler = logging.FileHandler(filename="output.log")
+
         formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", "%d-%m-%Y %H:%M:%S")
-        console_handler.setFormatter(formatter)
-        console_handler.setLevel(logging.DEBUG)
-        logger.addHandler(console_handler)
+        handler.setFormatter(formatter)
+        handler.setLevel(logging.DEBUG)
+        logger.addHandler(handler)
         loggers[name] = logger
         return logger

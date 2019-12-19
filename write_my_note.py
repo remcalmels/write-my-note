@@ -34,7 +34,16 @@ EDITOR = "vi"
 
 class WriteMyNote(object):
 
-    def __init__(self, notes_path, action, subject, title, content, file, search, debug_mode=False):
+    def __init__(self,
+                 notes_path,
+                 action,
+                 subject,
+                 title,
+                 content,
+                 file,
+                 search,
+                 debug_mode=False,
+                 console_output=False):
         self.notes_path = notes_path
         self.action = action
         self.subject = subject
@@ -46,10 +55,12 @@ class WriteMyNote(object):
 
         # Logger
         global log
-        log = Logger.getLogger('WriteMyNote', debug_mode)
+        log = Logger.getLogger('WriteMyNote', debug_mode, console_output)
 
     def execute(self):
         print()
+        if not os.path.exists(self.notes_path):  # Notes directory creation if does not exist
+            os.makedirs(self.notes_path)
         if self.action == 'new':
             self._new_note()
         if self.action == 'list':
@@ -151,6 +162,8 @@ def main():
     parser.add_argument("-file", help="markdown file to copy content (new note)")
     parser.add_argument("-text", help="text to search (open note)")
     parser.add_argument("--debug", dest="debug", action="store_true", help="debug mode")
+    parser.add_argument("--console", dest="console", action="store_true",
+                        help="to log to the console, logs to ./output.log otherwise")
     args = parser.parse_args()
     WriteMyNote(notes_path,
                 action=args.action,
@@ -159,7 +172,8 @@ def main():
                 content=args.content,
                 file=args.file,
                 search=args.text,
-                debug_mode=args.debug).execute()
+                debug_mode=args.debug,
+                console_output=args.console).execute()
 
 
 if __name__ == "__main__":

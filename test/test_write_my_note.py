@@ -24,7 +24,8 @@ class TestWriteMyNote(unittest.TestCase):
             NOTE_CONTENT,
             None,
             None,
-            debug_mode=True
+            debug_mode=True,
+            console_output=True
         )
 
     @patch.object(WriteMyNote, '_new_note')
