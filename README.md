@@ -3,9 +3,9 @@ A notes manager with markdown
 ## Prerequisites
 Python 3
 #### Environment variables:
-WRITE_MY_NOTE_PATH to specify the notes directory
+- WMN_PATH (required, notes repository path)
 
-WRITE_MY_NOTE_EDITOR (optional, default=vi) to specify your favorite text/markdown editor
+- WMN_EDITOR (optional, specify your favorite text/markdown editor, default="vi")
 ## Usage
 ```
 write-my-note --help

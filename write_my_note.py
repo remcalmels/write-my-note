@@ -6,8 +6,9 @@
 
     Prerequisites:
         Env var
-            - WRITE_MY_NOTE_PATH (required)
-            - WRITE_MY_NOTE_EDITOR (optional, default="vi")
+            - WMN_PATH (required, notes repository path)
+            - WMN_EDITOR (optional, specify your favorite text/markdown editor, default="vi")
+            - WMN_TOKEN (optional, GitHub access)
 
     Usage:
         positional arguments:
@@ -21,6 +22,7 @@
           -file FILE            markdown file to copy content
           -text TEXT            text to search
           --debug               debug mode
+          --console             to log to the console, logs to ./output.log otherwise
 """
 
 import argparse
@@ -132,7 +134,7 @@ class WriteMyNote(object):
             print(msg)
             log.error(msg)
         else:
-            cf_editor = os.environ.get('WRITE_MY_NOTE_EDITOR')
+            cf_editor = os.environ.get('WMN_EDITOR')
             editor = EDITOR if cf_editor is None else cf_editor
             cmd = os.environ.get('EDITOR', editor) + ' ' + file_path
             subprocess.call(cmd, shell=True)
@@ -151,18 +153,18 @@ def process_debug_logging(*args, **kwargs):
 
 
 def main():
-    notes_path = os.environ.get('WRITE_MY_NOTE_PATH')
+    notes_path = os.environ.get('WMN_PATH')
     if notes_path == "" or notes_path is None:
-        exit("WRITE_MY_NOTE_PATH must be defined")
+        exit("WMN_PATH must be defined")
     parser = argparse.ArgumentParser(description="A notes manager with markdown")
-    parser.add_argument("action", choices=['new', 'list', 'find', 'open'], help="action")
-    parser.add_argument("subject", nargs='?', help="subject of the note (new note)")
-    parser.add_argument("title", nargs='?', help="title of the note (new note)")
-    parser.add_argument("content", nargs='?', help="content of the note (new note)")
-    parser.add_argument("-file", help="markdown file to copy content (new note)")
-    parser.add_argument("-text", help="text to search (open note)")
-    parser.add_argument("--debug", dest="debug", action="store_true", help="debug mode")
-    parser.add_argument("--console", dest="console", action="store_true",
+    parser.add_argument('action', choices=['new', 'list', 'find', 'open'], help="action")
+    parser.add_argument('subject', nargs='?', help="subject of the note (new note)")
+    parser.add_argument('title', nargs='?', help="title of the note (new note)")
+    parser.add_argument('content', nargs='?', help="content of the note (new note)")
+    parser.add_argument('-file', help="markdown file to copy content (new note)")
+    parser.add_argument('-text', help="text to search (open note)")
+    parser.add_argument('--debug', dest="debug", action="store_true", help="debug mode")
+    parser.add_argument('--console', dest="console", action="store_true",
                         help="to log to the console, logs to ./output.log otherwise")
     args = parser.parse_args()
     WriteMyNote(notes_path,
@@ -176,5 +178,5 @@ def main():
                 console_output=args.console).execute()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
