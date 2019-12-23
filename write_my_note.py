@@ -6,8 +6,9 @@
 
     Prerequisites:
         Env var
-            - WRITE_MY_NOTE_PATH (required)
-            - WRITE_MY_NOTE_EDITOR (optional, default="vi")
+            - WMN_PATH (required, notes repository path)
+            - WMN_EDITOR (optional, specify your favorite text/markdown editor, default="vi")
+            - WMN_TOKEN (optional, GitHub access)
 
     Usage:
         positional arguments:
@@ -27,10 +28,17 @@
 import argparse
 import os
 import subprocess
-from file_wrapper import FileLineWrapper
 import logger as Logger
+from git import Repo
+from github import Github
+import datetime
 
-EDITOR = "vi"
+
+NOTE_FILE_EXT = ".md"
+EDITOR = 'vi'
+ENV_NOTES_PATH = 'WMN_PATH'
+ENV_EDITOR = 'WMN_EDITOR'
+ENV_GIT_TOKEN = 'WMN_TOKEN'
 
 
 class WriteMyNote(object):
@@ -44,7 +52,8 @@ class WriteMyNote(object):
                  file,
                  search,
                  debug_mode=False,
-                 console_output=False):
+                 console_output=False,
+                 github=False):
         self.notes_path = notes_path
         self.action = action
         self.subject = subject
@@ -53,6 +62,7 @@ class WriteMyNote(object):
         self.file = file
         self.search = search
         self.debug = debug_mode
+        self.github = github
 
         # Logger
         global log
@@ -60,8 +70,7 @@ class WriteMyNote(object):
 
     def execute(self):
         print()
-        if not os.path.exists(self.notes_path):  # Notes directory creation if does not exist
-            os.makedirs(self.notes_path)
+        self._init()
         if self.action == 'new':
             self._new_note()
         if self.action == 'list':
@@ -71,16 +80,37 @@ class WriteMyNote(object):
         if self.action == 'open':
             self._open_note()
 
+    def _init(self):
+        if not self.github:
+            # No Github
+            # Notes directory creation if does not exist
+            if not os.path.exists(self.notes_path):
+                os.makedirs(self.notes_path)
+        else:
+            # Github
+            if not os.path.exists(self.notes_path):
+                # Creates remote repository and clones it
+                g = Github(os.environ.get(ENV_GIT_TOKEN))
+                repo_name = os.path.basename(os.path.normpath(self.notes_path))
+                remote_repo = g.get_user().create_repo(repo_name)
+                git_https_url = "https://github.com/" + remote_repo.full_name + ".git"
+                self.repo = Repo.clone_from(git_https_url, self.notes_path)
+            else:
+                # Pull remote changes
+                self.repo = Repo(self.notes_path)
+                self.repo.git.pull()
+
     def _list_notes(self):
-        folder = os.listdir(self.notes_path)
-        print(str(len(folder)) + " NOTE(S) FOUND:\n---")
-        for file in folder:
-            if file.endswith(".md"):
+        nb_notes = 0
+        for file in os.listdir(self.notes_path):
+            if file.endswith(NOTE_FILE_EXT):
                 print(file)
-        return len(folder)
+                nb_notes += 1
+        print("---\n" + str(nb_notes) + " NOTE(S) FOUND")
+        return nb_notes
 
     def _new_note(self):
-        file_path = os.path.join(self.notes_path, self.subject + ".md")
+        file_path = os.path.join(self.notes_path, self.subject + NOTE_FILE_EXT)
         if not os.path.exists(file_path):
             if self.debug:
                 process_debug_logging("Existing file -> update", file_path=file_path)
@@ -92,6 +122,8 @@ class WriteMyNote(object):
             f = open(file_path, 'a')
         self._write(f)
         f.close()
+        if self.github:
+            self._git_push()    # Push changes to Github repository
 
     def _write(self, dest_file):
         if self.file is None:
@@ -103,37 +135,36 @@ class WriteMyNote(object):
         text = content + "\n"
         dest_file.write(text)
 
+    def _git_push(self):
+        g = self.repo.git
+        g.add(A=True)
+        g.commit('-m', "Commit changes - %s" % datetime.datetime.now())
+        g.push()
+
     def _find_notes(self):
-        nb = 0
+        nb_found = 0
         for file in os.listdir(self.notes_path):
-            if file.endswith(".md"):
-                with FileLineWrapper(open(os.path.join(self.notes_path, file))) as openfile:
-                    lines = ""
-                    while True:
-                        line = openfile.readline().strip()
-                        if line == '':
-                            # either end of file or just a blank line.....
-                            # we'll assume EOF, because we don't have a choice with the while loop!
-                            break
+            if file.endswith(NOTE_FILE_EXT):
+                with open(os.path.join(self.notes_path, file)) as f:
+                    lines = f.readlines()
+                    for idx, line in enumerate(lines):
                         for part in line.split():
                             if self.search.upper() in part.upper():
-                                print(file + " (L" + str(openfile.line) + ")" + " >  " + line)
-                                nb += 1
-                        if self.debug:
-                            lines += line + "\n"
-                    openfile.close()
+                                print(file + " (L" + str(idx + 1) + ")" + " >  " + line)
+                                nb_found += 1
+                    f.close()
                     if self.debug:
-                        process_debug_logging("Content of '%s':" % file, lines)
-        return nb
+                        process_debug_logging("Content of '%s': " % file, lines)
+        return nb_found
 
     def _open_note(self):
-        file_path = os.path.join(self.notes_path, self.subject + ".md")
+        file_path = os.path.join(self.notes_path, self.subject + NOTE_FILE_EXT)
         if not os.path.exists(file_path):
-            msg = "Note not found for this subject"
+            msg = "Note not found for this subject :|"
             print(msg)
             log.error(msg)
         else:
-            cf_editor = os.environ.get('WRITE_MY_NOTE_EDITOR')
+            cf_editor = os.environ.get(ENV_EDITOR)
             editor = EDITOR if cf_editor is None else cf_editor
             cmd = os.environ.get('EDITOR', editor) + ' ' + file_path
             subprocess.call(cmd, shell=True)
@@ -152,18 +183,18 @@ def process_debug_logging(*args, **kwargs):
 
 
 def main():
-    notes_path = os.environ.get('WRITE_MY_NOTE_PATH')
+    notes_path = os.environ.get(ENV_NOTES_PATH)
     if notes_path == "" or notes_path is None:
-        exit("WRITE_MY_NOTE_PATH must be defined")
+        exit("%s must be defined" % ENV_NOTES_PATH)
     parser = argparse.ArgumentParser(description="A notes manager with markdown")
-    parser.add_argument("action", choices=['new', 'list', 'find', 'open'], help="action")
-    parser.add_argument("subject", nargs='?', help="subject of the note (new note)")
-    parser.add_argument("title", nargs='?', help="title of the note (new note)")
-    parser.add_argument("content", nargs='?', help="content of the note (new note)")
-    parser.add_argument("-file", help="markdown file to copy content (new note)")
-    parser.add_argument("-text", help="text to search (open note)")
-    parser.add_argument("--debug", dest="debug", action="store_true", help="debug mode")
-    parser.add_argument("--console", dest="console", action="store_true",
+    parser.add_argument('action', choices=['new', 'list', 'find', 'open'], help="action")
+    parser.add_argument('subject', nargs='?', help="subject of the note (new note)")
+    parser.add_argument('title', nargs='?', help="title of the note (new note)")
+    parser.add_argument('content', nargs='?', help="content of the note (new note)")
+    parser.add_argument('-file', help="markdown file to copy content (new note)")
+    parser.add_argument('-text', help="text to search (open note)")
+    parser.add_argument('--debug', dest="debug", action="store_true", help="debug mode")
+    parser.add_argument('--console', dest="console", action="store_true",
                         help="to log to the console, logs to ./output.log otherwise")
     args = parser.parse_args()
     WriteMyNote(notes_path,
@@ -174,8 +205,10 @@ def main():
                 file=args.file,
                 search=args.text,
                 debug_mode=args.debug,
-                console_output=args.console).execute()
+                console_output=args.console,
+                github=False if os.environ.get(ENV_GIT_TOKEN) is None else True)\
+        .execute()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

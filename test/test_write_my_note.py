@@ -7,6 +7,7 @@ from mock import patch
 from write_my_note import WriteMyNote
 
 
+NOTE_FILE_EXT = ".md"
 NOTES_PATH = "notes"
 NOTE_SUBJECT = "a_subject"
 NOTE_TITLE = "a_title"
@@ -72,7 +73,7 @@ class TestWriteMyNote(unittest.TestCase):
 
     @patch.object(WriteMyNote, '_write')
     def test_newNote_shouldWriteANewFile_whenNoFileWithThisSubjectExists(self, wmn_mock):
-        expected_file_path = os.path.join(NOTES_PATH, NOTE_SUBJECT + ".md")
+        expected_file_path = os.path.join(NOTES_PATH, NOTE_SUBJECT + NOTE_FILE_EXT)
         # When
         self.write_my_note._new_note()
         # Then
@@ -81,7 +82,7 @@ class TestWriteMyNote(unittest.TestCase):
         os.remove(expected_file_path)
 
     def test_newNote_shouldWriteInExistingFile_whenAFileWithThisSubjectExists(self):
-        file_path = os.path.join(NOTES_PATH, NOTE_SUBJECT + ".md")
+        file_path = os.path.join(NOTES_PATH, NOTE_SUBJECT + NOTE_FILE_EXT)
         # Given
         f = open(file_path, 'w')
         f.write("a line\n")
@@ -96,7 +97,7 @@ class TestWriteMyNote(unittest.TestCase):
         os.remove(file_path)
 
     def test_write_shouldCreateNote(self):
-        file_path = os.path.join(NOTES_PATH, NOTE_SUBJECT + ".md")
+        file_path = os.path.join(NOTES_PATH, NOTE_SUBJECT + NOTE_FILE_EXT)
         f = open(file_path, 'w')
         # When
         self.write_my_note._write(f)
@@ -110,10 +111,10 @@ class TestWriteMyNote(unittest.TestCase):
         self.assertTrue(NOTE_CONTENT.upper() in content[1].upper())
 
     def test_write_shouldAddFileContent_whenAMarkdownFileIsSpecified(self):
-        file_path = os.path.join(NOTES_PATH, NOTE_SUBJECT + ".md")
+        file_path = os.path.join(NOTES_PATH, NOTE_SUBJECT + NOTE_FILE_EXT)
         f = open(file_path, 'w')
         # Given
-        self.write_my_note.file = "content.md"
+        self.write_my_note.file = "content" + NOTE_FILE_EXT
         # When
         self.write_my_note._write(f)
         # Then
@@ -138,7 +139,7 @@ class TestWriteMyNote(unittest.TestCase):
         # When
         self.write_my_note._open_note()
         # Then
-        log_mock.error.assert_called_with("Note not found for this subject")
+        log_mock.error.assert_called_with("Note not found for this subject :|")
 
     @patch('write_my_note.log')
     @patch('subprocess.call')
@@ -149,4 +150,4 @@ class TestWriteMyNote(unittest.TestCase):
         # When
         self.write_my_note._open_note()
         # Then
-        log_mock.debug.assert_called_with("[file_path]= notes/a_note.md")
+        log_mock.debug.assert_called_with("[file_path]= notes/a_note" + NOTE_FILE_EXT)

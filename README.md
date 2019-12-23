@@ -1,11 +1,13 @@
 # write-my-note
-A notes manager with markdown
-## Prerequisites
-Python 3
-#### Environment variables:
-WRITE_MY_NOTE_PATH to specify the notes directory
+A markdown notes manager with Github
 
-WRITE_MY_NOTE_EDITOR (optional, default=vi) to specify your favorite text/markdown editor
+You can link your notes repository with your Github account
+## Prerequisites
+- Python 3
+- #### Environment variables:
+    - WMN_PATH (required, notes repository path)
+    - WMN_EDITOR (optional, specify your favorite text/markdown editor, default="vi")
+    - WMN_TOKEN (optional, GitHub access token)
 ## Usage
 ```
 write-my-note --help
