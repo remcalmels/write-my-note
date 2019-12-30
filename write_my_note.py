@@ -12,15 +12,16 @@
 
     Usage:
         positional arguments:
-          {new,list,find,open}  action
-          subject               subject of the note
-          title                 title of the note
-          content               content of the note
+          {new,list,find,open,remove}
+                                action
+          subject               subject of the note (new note)
+          title                 title of the note (new note)
+          content               content of the note (new note)
 
         optional arguments:
           -h, --help            show this help message and exit
-          -file FILE            markdown file to copy content
-          -text TEXT            text to search
+          -file FILE            markdown file to copy content (new note)
+          -text TEXT            text to search (open note)
           --debug               debug mode
           --console             to log to the console, logs to ./output.log otherwise
 """
