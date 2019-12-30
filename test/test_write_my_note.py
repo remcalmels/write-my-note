@@ -139,7 +139,7 @@ class TestWriteMyNote(unittest.TestCase):
         # When
         self.write_my_note._open_note()
         # Then
-        log_mock.error.assert_called_with("Note not found for this subject :|")
+        log_mock.error.assert_called_with("Note not found :|")
 
     @patch('write_my_note.log')
     @patch('subprocess.call')
@@ -151,3 +151,22 @@ class TestWriteMyNote(unittest.TestCase):
         self.write_my_note._open_note()
         # Then
         log_mock.debug.assert_called_with("[file_path]= notes/a_note" + NOTE_FILE_EXT)
+
+    @patch('write_my_note.log')
+    def test_removeNote_shouldLogError_whenNoteIsNotFound(self, log_mock):
+        # When
+        self.write_my_note._remove_note()
+        # Then
+        log_mock.error.assert_called_with("Note not found :|")
+
+    @patch('write_my_note.log')
+    @patch('os.path.exists')
+    @patch('os.remove')
+    def test_removeNote_shouldLogDebug_whenNoteIsOpened(self, rm_mock, pe_mock, log_mock):
+        # Given
+        pe_mock.return_value = True
+        rm_mock.return_value = None
+        # When
+        self.write_my_note._remove_note()
+        # Then
+        log_mock.debug.assert_called_with("Note removed")
