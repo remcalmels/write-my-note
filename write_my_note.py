@@ -79,6 +79,8 @@ class WriteMyNote(object):
             self._find_notes()
         if self.action == 'open':
             self._open_note()
+        if self.action == 'remove':
+            self._remove_note()
 
     def _init(self):
         if not self.github:
@@ -123,7 +125,7 @@ class WriteMyNote(object):
         self._write(f)
         f.close()
         if self.github:
-            self._git_push()    # Push changes to Github repository
+            self._git_push("New note '%s'" % (self.subject + NOTE_FILE_EXT))
 
     def _write(self, dest_file):
         if self.file is None:
@@ -135,10 +137,10 @@ class WriteMyNote(object):
         text = content + "\n"
         dest_file.write(text)
 
-    def _git_push(self):
+    def _git_push(self, msg):
         g = self.repo.git
         g.add(A=True)
-        g.commit('-m', "Commit changes - %s" % datetime.datetime.now())
+        g.commit('-m', msg + " - %s" % datetime.datetime.now())
         g.push()
 
     def _find_notes(self):
@@ -160,7 +162,7 @@ class WriteMyNote(object):
     def _open_note(self):
         file_path = os.path.join(self.notes_path, self.subject + NOTE_FILE_EXT)
         if not os.path.exists(file_path):
-            msg = "Note not found for this subject :|"
+            msg = "Note not found :|"
             print(msg)
             log.error(msg)
         else:
@@ -173,6 +175,19 @@ class WriteMyNote(object):
                                       cf_editor=cf_editor,
                                       editor=editor,
                                       file_path=file_path)
+
+    def _remove_note(self):
+        file_path = os.path.join(self.notes_path, self.subject + NOTE_FILE_EXT)
+        if not os.path.exists(file_path):
+            msg = "Note not found :|"
+            print(msg)
+            log.error(msg)
+        else:
+            os.remove(file_path)
+            if self.github:
+                self._git_push("Remove '%s'" % (self.subject + NOTE_FILE_EXT))
+            if self.debug:
+                log.debug("Note removed")
 
 
 def process_debug_logging(*args, **kwargs):
@@ -187,7 +202,7 @@ def main():
     if notes_path == "" or notes_path is None:
         exit("%s must be defined" % ENV_NOTES_PATH)
     parser = argparse.ArgumentParser(description="A notes manager with markdown")
-    parser.add_argument('action', choices=['new', 'list', 'find', 'open'], help="action")
+    parser.add_argument('action', choices=['new', 'list', 'find', 'open', 'remove'], help="action")
     parser.add_argument('subject', nargs='?', help="subject of the note (new note)")
     parser.add_argument('title', nargs='?', help="title of the note (new note)")
     parser.add_argument('content', nargs='?', help="content of the note (new note)")
