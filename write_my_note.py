@@ -127,7 +127,7 @@ class WriteMyNote(object):
 
     def _write(self, dest_file):
         if self.file is None:
-            content = "### " + self.title.title() + "\n" + self.content
+            content = "### " + self.title.capitalize() + "\n" + self.content
         else:
             f = open(self.file, 'r')
             content = f.read()
