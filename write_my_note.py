@@ -42,6 +42,7 @@ ENV_NOTES_PATH = 'WMN_PATH'
 ENV_EDITOR = 'WMN_EDITOR'
 ENV_GIT_TOKEN = 'WMN_TOKEN'
 ENV_LOG_PATH = 'WMN_LOG'
+GIT_PRIVATE_CHAR = '_'
 
 
 class WriteMyNote(object):
@@ -120,7 +121,10 @@ class WriteMyNote(object):
             if self.debug:
                 process_debug_logging("Existing file -> update", file_path=file_path)
             f = open(file_path, 'w')
-            f.write("# " + self.subject.title() + "\n\n")
+            subject = self.subject
+            if subject.startswith(GIT_PRIVATE_CHAR):
+                subject = subject[1:]
+            f.write("# " + subject.capitalize() + "\n\n")
         else:
             if self.debug:
                 process_debug_logging("New file", file_path=file_path)
