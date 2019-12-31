@@ -146,9 +146,10 @@ class WriteMyNote(object):
 
     def _git_push(self, msg):
         g = self.repo.git
-        g.add(A=True)
-        g.commit('-m', msg + " - %s" % datetime.datetime.now())
-        g.push()
+        if g.diff("HEAD") != "":
+            g.add(A=True)
+            g.commit('-m', msg + " - %s" % datetime.datetime.now())
+            g.push()
 
     def _find_notes(self):
         nb_found = 0
@@ -177,6 +178,9 @@ class WriteMyNote(object):
             editor = EDITOR if cf_editor is None else cf_editor
             cmd = os.environ.get('EDITOR', editor) + ' ' + file_path
             subprocess.call(cmd, shell=True)
+            # Push modifications if necessary
+            if self.github:
+                self._git_push("Update '%s'" % (self.subject + NOTE_FILE_EXT))
             if self.debug:
                 process_debug_logging("Note opened with the editor",
                                       cf_editor=cf_editor,
