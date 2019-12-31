@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import logging
+import os
 
 loggers = {}
 
 
-def getLogger(name, debug_mode=False, console_handler=False):
+def getLogger(name, debug_mode=False, console_handler=False, log_path=None):
 
     """
     Pour éviter le problème de doublons sur les logs :
@@ -24,7 +26,10 @@ def getLogger(name, debug_mode=False, console_handler=False):
         if console_handler:
             handler = logging.StreamHandler()
         else:
-            handler = logging.FileHandler(filename="output.log")
+            if log_path is None:
+                log_path = "./"
+            filename = os.path.join(log_path, '') + "output.log"
+            handler = logging.FileHandler(filename=filename)
 
         formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", "%d-%m-%Y %H:%M:%S")
         handler.setFormatter(formatter)

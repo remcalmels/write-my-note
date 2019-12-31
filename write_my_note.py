@@ -9,6 +9,7 @@
             - WMN_PATH (required, notes repository path)
             - WMN_EDITOR (optional, specify your favorite text/markdown editor, default="vi")
             - WMN_TOKEN (optional, GitHub access)
+            - WMN_LOG (optional, specify the logs path)
 
     Usage:
         positional arguments:
@@ -40,6 +41,7 @@ EDITOR = 'vi'
 ENV_NOTES_PATH = 'WMN_PATH'
 ENV_EDITOR = 'WMN_EDITOR'
 ENV_GIT_TOKEN = 'WMN_TOKEN'
+ENV_LOG_PATH = 'WMN_LOG'
 
 
 class WriteMyNote(object):
@@ -67,7 +69,7 @@ class WriteMyNote(object):
 
         # Logger
         global log
-        log = Logger.getLogger('WriteMyNote', debug_mode, console_output)
+        log = Logger.getLogger('WriteMyNote', debug_mode, console_output, os.environ.get(ENV_LOG_PATH))
 
     def execute(self):
         print()
