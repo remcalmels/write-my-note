@@ -31,7 +31,7 @@ import argparse
 import os
 import subprocess
 import logger as Logger
-from git import Repo
+from git import Repo, GitCommandError
 from github import Github
 import datetime
 
@@ -101,6 +101,10 @@ class WriteMyNote(object):
                 remote_repo = g.get_user().create_repo(repo_name)
                 git_https_url = "https://github.com/" + remote_repo.full_name + ".git"
                 self.repo = Repo.clone_from(git_https_url, self.notes_path)
+                # .gitignore creation
+                gitignore = open(os.path.join(self.notes_path, ".gitignore"), "w")
+                gitignore.write("_*.md")
+                gitignore.close()
             else:
                 # Pull remote changes
                 self.repo = Repo(self.notes_path)
@@ -116,7 +120,7 @@ class WriteMyNote(object):
         return nb_notes
 
     def _new_note(self):
-        file_path = os.path.join(self.notes_path, self.subject + NOTE_FILE_EXT)
+        file_path = os.path.join(self.notes_path, self.subject.replace(' ', '-') + NOTE_FILE_EXT)
         if not os.path.exists(file_path):
             if self.debug:
                 process_debug_logging("Existing file -> update", file_path=file_path)
@@ -146,8 +150,13 @@ class WriteMyNote(object):
 
     def _git_push(self, msg):
         g = self.repo.git
-        if g.diff("HEAD") != "":
-            g.add(A=True)
+        g.add(A=True)
+        try:
+            commit = g.diff("HEAD") != ""
+        except GitCommandError:
+            commit = True
+            pass
+        if commit:
             g.commit('-m', msg + " - %s" % datetime.datetime.now())
             g.push()
 
