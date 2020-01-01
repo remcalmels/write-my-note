@@ -8,7 +8,9 @@
         Env var
             - WMN_PATH (required, notes repository path)
             - WMN_EDITOR (optional, specify your favorite text/markdown editor, default="vi")
-            - WMN_TOKEN (optional, GitHub access)
+            - WMN_GIT_TOKEN (optional, GitHub access token)
+            - WMN_GIT_NAME (optional, Github user name)
+            - WMN_GIT_EMAIL (optional, Github user email)
             - WMN_LOG (optional, specify the logs path)
 
     Usage:
@@ -40,7 +42,9 @@ NOTE_FILE_EXT = ".md"
 EDITOR = 'vi'
 ENV_NOTES_PATH = 'WMN_PATH'
 ENV_EDITOR = 'WMN_EDITOR'
-ENV_GIT_TOKEN = 'WMN_TOKEN'
+ENV_GIT_TOKEN = 'WMN_GIT_TOKEN'
+ENV_GIT_NAME = 'WMN_GIT_NAME'
+ENV_GIT_EMAIL = 'WMN_GIT_EMAIL'
 ENV_LOG_PATH = 'WMN_LOG'
 GIT_PRIVATE_CHAR = '_'
 
@@ -101,10 +105,16 @@ class WriteMyNote(object):
                 remote_repo = g.get_user().create_repo(repo_name)
                 git_https_url = "https://github.com/" + remote_repo.full_name + ".git"
                 self.repo = Repo.clone_from(git_https_url, self.notes_path)
+                # User configuration
+                if os.environ.get(ENV_GIT_NAME) is not None:
+                    self.repo.config_writer().set_value("user", "name", os.environ.get(ENV_GIT_NAME)).release()
+                if os.environ.get(ENV_GIT_EMAIL) is not None:
+                    self.repo.config_writer().set_value("user", "email", os.environ.get(ENV_GIT_EMAIL)).release()
                 # .gitignore creation
                 gitignore = open(os.path.join(self.notes_path, ".gitignore"), "w")
                 gitignore.write("_*.md")
                 gitignore.close()
+                self._git_push("Repository creation")
             else:
                 # Pull remote changes
                 self.repo = Repo(self.notes_path)
