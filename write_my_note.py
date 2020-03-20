@@ -122,7 +122,7 @@ class WriteMyNote(object):
 
     def _list_notes(self):
         nb_notes = 0
-        for file in os.listdir(self.notes_path):
+        for file in sorted(os.listdir(self.notes_path)):
             if file.endswith(NOTE_FILE_EXT):
                 print(file)
                 nb_notes += 1
