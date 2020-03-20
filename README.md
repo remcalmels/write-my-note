@@ -9,9 +9,9 @@ You can link your notes repository with your Github account
 - #### Environment variables:
     - WMN_PATH (required, notes repository path)
     - WMN_EDITOR (optional, specify your favorite text/markdown editor, default="vi")
-    - WMN_GIT_TOKEN (optional, GitHub access token)
-    - WMN_GIT_NAME (optional, Github user name)
-    - WMN_GIT_EMAIL (optional, Github user email)
+    - WMN_GIT_TOKEN (optional, GitHub access token if use GitHub repository)
+    - WMN_GIT_NAME (optional, Github user name if use GitHub repository)
+    - WMN_GIT_EMAIL (optional, Github user email if use GitHub repository)
     - WMN_LOG (optional, specify the logs path)
 ## Usage
 ```
