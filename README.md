@@ -4,6 +4,8 @@ A markdown notes manager with Github
 You can link your notes repository with your Github account
 ## Prerequisites
 - Python 3
+- pip
+- install dependencies `pip install -r requirements.txt`
 - #### Environment variables:
     - WMN_PATH (required, notes repository path)
     - WMN_EDITOR (optional, specify your favorite text/markdown editor, default="vi")
