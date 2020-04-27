@@ -36,7 +36,7 @@ import logger as Logger
 from git import Repo, GitCommandError
 from github import Github
 import datetime
-
+from exception.wmnexception import WmnException
 
 NOTE_FILE_EXT = ".md"
 EDITOR = 'vi'
@@ -79,16 +79,20 @@ class WriteMyNote(object):
     def execute(self):
         print()
         self._init()
-        if self.action == 'new':
-            self._new_note()
-        if self.action == 'list':
-            self._list_notes()
-        if self.action == 'find':
-            self._find_notes()
-        if self.action == 'open':
-            self._open_note()
-        if self.action == 'remove':
-            self._remove_note()
+        try:
+            if self.action == 'new':
+                self._new_note()
+            if self.action == 'list':
+                self._list_notes()
+            if self.action == 'find':
+                self._find_notes()
+            if self.action == 'open':
+                self._open_note()
+            if self.action == 'remove':
+                self._remove_note()
+        except WmnException as e:
+            print(e.message)
+            log.info(e.message)
 
     def _init(self):
         if not self.github:
@@ -150,7 +154,8 @@ class WriteMyNote(object):
 
     def _write(self, dest_file):
         if self.file is None:
-            content = "### " + self.title.capitalize() + "\n" + self.content
+            title = "" if self.title is None else "### " + self.title.capitalize() + "\n"
+            content = title + "" if self.content is None else self.content
         else:
             f = open(self.file, 'r')
             content = f.read()
@@ -171,6 +176,8 @@ class WriteMyNote(object):
             g.push()
 
     def _find_notes(self):
+        if self.search is None:
+            raise WmnException("Missing -text attribute")
         nb_found = 0
         for file in os.listdir(self.notes_path):
             if file.endswith(NOTE_FILE_EXT):
@@ -187,37 +194,36 @@ class WriteMyNote(object):
         return nb_found
 
     def _open_note(self):
-        file_path = os.path.join(self.notes_path, self.subject + NOTE_FILE_EXT)
-        if not os.path.exists(file_path):
-            msg = "Note not found :|"
-            print(msg)
-            log.error(msg)
-        else:
-            cf_editor = os.environ.get(ENV_EDITOR)
-            editor = EDITOR if cf_editor is None else cf_editor
-            cmd = os.environ.get('EDITOR', editor) + ' ' + file_path
-            subprocess.call(cmd, shell=True)
-            # Push modifications if necessary
-            if self.github:
-                self._git_push("Update '%s'" % (self.subject + NOTE_FILE_EXT))
-            if self.debug:
-                process_debug_logging("Note opened with the editor",
-                                      cf_editor=cf_editor,
-                                      editor=editor,
-                                      file_path=file_path)
+        file_path = self._get_path()
+        cf_editor = os.environ.get(ENV_EDITOR)
+        editor = EDITOR if cf_editor is None else cf_editor
+        cmd = os.environ.get('EDITOR', editor) + ' ' + file_path
+        subprocess.call(cmd, shell=True)
+        # Push modifications if necessary
+        if self.github:
+            self._git_push("Update '%s'" % (self.subject + NOTE_FILE_EXT))
+        if self.debug:
+            process_debug_logging("Note opened with the editor",
+                                  cf_editor=cf_editor,
+                                  editor=editor,
+                                  file_path=file_path)
 
     def _remove_note(self):
+        file_path = self._get_path()
+        os.remove(file_path)
+        if self.github:
+            self._git_push("Remove '%s'" % (self.subject + NOTE_FILE_EXT))
+        if self.debug:
+            log.debug("Note removed")
+
+    def _get_path(self):
         file_path = os.path.join(self.notes_path, self.subject + NOTE_FILE_EXT)
         if not os.path.exists(file_path):
-            msg = "Note not found :|"
-            print(msg)
-            log.error(msg)
-        else:
-            os.remove(file_path)
-            if self.github:
-                self._git_push("Remove '%s'" % (self.subject + NOTE_FILE_EXT))
-            if self.debug:
-                log.debug("Note removed")
+            file_path = os.path.join(self.notes_path, GIT_PRIVATE_CHAR + self.subject + NOTE_FILE_EXT)
+            if not os.path.exists(file_path):
+                raise WmnException("Note not found :|")
+            print("(This is a private note)")
+        return file_path
 
 
 def process_debug_logging(*args, **kwargs):
